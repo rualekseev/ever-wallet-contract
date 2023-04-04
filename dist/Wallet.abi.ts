@@ -27,6 +27,5 @@ export default {
   events: [],
   fields: [
     { name: '_pubkey', type: 'uint256' },
-    { name: '_timestamp', type: 'uint64' },
   ],
 } as const;

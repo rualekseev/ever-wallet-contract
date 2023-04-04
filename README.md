@@ -1,3 +1,7 @@
+## WARNING
+
+For REMP tests only!
+
 ## EVER Wallet contract
 
 The simplest yet powerful ABI 2.3 compliant wallet.

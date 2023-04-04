@@ -51,8 +51,8 @@ int is_method_send_transaction_raw(int function_id) asm "0x169e3e11 PUSHINT EQUA
 ;; Decodes message body
 ;; Checks signature
 ;; Replay protection logic
-;; Returns (body, (stored_timestamp, stored_pubkey, function id))
-(slice, (int, int, int)) ~process_headers(slice body) inline {
+;; Returns (body, (stored_pubkey, function id))
+(slice, (int, int)) ~process_headers(slice body) inline {
     ;; Read signature
     int has_signature? = body~load_uint(1);
     throw_if(58, has_signature? == 0);
@@ -60,7 +60,7 @@ int is_method_send_transaction_raw(int function_id) asm "0x169e3e11 PUSHINT EQUA
 
     ;; Load persistent data
     var ds = get_data().begin_parse();
-    (int stored_pubkey, int stored_timestamp) = (ds~load_uint(256), ds.preload_uint(64));
+    (int stored_pubkey) = (ds~load_uint(256));
 
     ;; Prepend address to the body
     cell body_with_address = begin_cell().store_slice(my_address()).store_slice(body).end_cell();
@@ -83,9 +83,9 @@ int is_method_send_transaction_raw(int function_id) asm "0x169e3e11 PUSHINT EQUA
     throw_if(57, expire_at <= now());
 
     ;; Check `time` header
-    throw_if(52, (stored_timestamp >= msg_timestamp) | (msg_timestamp > (now() + 1800) * 1000));
+    throw_if(52, (msg_timestamp > (now() + 1800) * 1000));
 
-    return (body, (msg_timestamp, stored_pubkey, function_id));
+    return (body, (stored_pubkey, function_id));
 }
 
 {- entries -}
@@ -97,7 +97,7 @@ int is_method_send_transaction_raw(int function_id) asm "0x169e3e11 PUSHINT EQUA
 
 ;; External messages handler
 () recv_external(slice body) impure {
-    (int stored_timestamp, int stored_pubkey, int function_id) = body~process_headers();
+    (int stored_pubkey, int function_id) = body~process_headers();
 
     if (function_id.is_method_send_transaction()) {
         ;; "sendTransaction" method handler
@@ -167,6 +167,5 @@ int is_method_send_transaction_raw(int function_id) asm "0x169e3e11 PUSHINT EQUA
     ;; Store persistent data
     set_data(begin_cell()
             .store_uint(stored_pubkey, 256)
-            .store_uint(stored_timestamp, 64)
             .end_cell());
 }
